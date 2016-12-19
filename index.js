@@ -1,6 +1,6 @@
 'use strict';
 var Alexa = require("alexa-sdk");
-var appId = 'amzn1.ask.skill.d8a7eb83-32df-4f4f-b33e-f2eaf70ef9f8';   //'amzn1.echo-sdk-ams.app.your-skill-id';
+var appId = 'amzn1.echo-sdk-ams.app.your-skill-id';
 
 var unirest = require('unirest');
 
