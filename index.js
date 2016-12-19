@@ -12,12 +12,6 @@ exports.handler = function(event, context, callback) {
     alexa.execute();
 };
 
-var states = {
-    STARTMODE: '_STARTMODE',   // prompt the user to start or restart
-	TYPEMODE: '_TYPEMODE',     // changing query type
-	QUERYMODE: '_QUERYMODE'    // user querying history
-};
-
 var handlers = {
     //Use LaunchRequest, instead of NewSession if you want to use the one-shot model
     // Alexa, ask [my-skill-invocation-name] to (do something)...
@@ -116,7 +110,7 @@ var handlers = {
     'SessionEndedRequest': function () {
         console.log('session ended!');
         this.emit(':saveState', true);
-        this.emit(':tell', this.t("STOP_MESSAGE"));
+        this.emit(':tell', "Session ended!");
     },
 	'FindRecipes': function (that) {
 		var url = "https://spoonacular-recipe-food-nutrition-v1.p.mashape.com/recipes/findByIngredients?fillIngredients=false&ingredients=" + this.attributes['ingredients'].join(",") +"&limitLicense=false&number=5&ranking=1";
@@ -146,29 +140,22 @@ var handlers = {
 		
 	},
 	'GetInstructions': function (that) {
-		var url = "https://spoonacular-recipe-food-nutrition-v1.p.mashape.com/recipes/556470/information?includeNutrition=false";
+		var url = "https://spoonacular-recipe-food-nutrition-v1.p.mashape.com/recipes/" + that.attributes['lastResult'][that.attributes['currentIndex']].id + "/information?includeNutrition=false";
 		
 		unirest.get(url).header("X-Mashape-Key", "ZVrobra1Wgmshu4HXd0zXIDreW7wp1Fxv2MjsnbTtMiT0jmH9X")
 		.header("Accept", "application/json")
 		.end(function (result) {
 			console.log(result.status, result.headers, result.body);
 		  		  
-			var recipes = result.body;
-			
 			var speechOutput = '';
-			var repromptSpeech = '';
 			
-			if (recipes.length == 0) {	
-				speechOutput = "No recipe containing " + that.attributes['ingredients'].join(" ") + "  Try removing an ingredient.";
-				repromptSpeech = "Try saying, remove " + that.attributes['ingredients'][0];
+			if (!result.body.instructions) {	
+				speechOutput = "There is no instruction.  Good-bye.";
 			} else {
-				that.attributes['lastResult'] = recipes;
-				
-				speechOutput = "Do you like " + recipes[0].title + "?";
-				repromptSpeech = "Or maybe you want to add or remove an ingredient?";
+				speechOutput = "Here are the instructions: " + result.body.instructions;
 			}
 			
-			that.emit(':ask', speechOutput, repromptSpeech);
+			that.emit(':tell', speechOutput);
 		});
 		
 	}

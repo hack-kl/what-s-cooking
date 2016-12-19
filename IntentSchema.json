@@ -1,15 +1,6 @@
 {
   "intents": [
     {
-      "intent": "QueryEventIntent",
-      "slots": [
-        {
-          "name": "day",
-          "type": "AMAZON.DATE"
-        }
-      ]
-    },
-    {
       "intent": "GetRecipeInformationIntent"
     },
     {
