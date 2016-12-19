@@ -1,0 +1,21 @@
+{
+  "name": "whats-cooking",
+  "version": "1.0.0",
+  "description": "What's Cooking",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "food",
+    "recipes",
+    "cooking",
+    "ingredients"
+  ],
+  "author": "vincent wong",
+  "license": "ISC",
+  "dependencies": {
+    "alexa-sdk": "^1.0.6",
+    "unirest": "^0.5.1"
+  }
+}
