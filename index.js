@@ -19,7 +19,7 @@ var handlers = {
         if(Object.keys(this.attributes).length === 0) {
             this.attributes['ingredients'] = 'chicken';
         }
-        this.emit('FindRecipes');
+        this.emit('FindRecipes', this);
     },
 	'NewIngredientIntent': function () {
 		this.attributes['currentIndex'] = 0;
