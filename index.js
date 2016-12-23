@@ -16,9 +16,11 @@ var handlers = {
     //Use LaunchRequest, instead of NewSession if you want to use the one-shot model
     // Alexa, ask [my-skill-invocation-name] to (do something)...
     'LaunchRequest': function () {
+    //'NewSession': function () {
         if(Object.keys(this.attributes).length === 0) {
-            this.attributes['ingredients'] = 'chicken';
+            this.attributes['ingredients'] = ['chicken'];
         }
+		//this.attributes['ingredients'] = ['chicken'];			
         this.emit('FindRecipes', this);
     },
 	'NewIngredientIntent': function () {
@@ -27,7 +29,8 @@ var handlers = {
 		if (ingredients && ingredients.value) {
 			this.attributes['ingredients'] = ingredients.value.split(" ");
 		} else {
-			this.attributes['ingredients'] = [];			
+			//this.attributes['ingredients'] = [];			
+			this.attributes['ingredients'] = ['chicken'];			
 		}
 
         this.emit('FindRecipes', this);
@@ -99,7 +102,7 @@ var handlers = {
 				speechOutput = "No additional recipe containing " + this.attributes['ingredients'].join(" ") + "  Try removing an ingredient.";
 				repromptSpeech = "Try saying, remove " + this.attributes['ingredients'][0];			
 			} else {
-				speechOutput = "Do you like " + this.attributes['lastResult'][this.attributes['currentIndex']].title + "?";
+				speechOutput = "Do you like " + this.attributes['lastResult'][this.attributes['currentIndex']].title.replace(/&/g, 'and') + "?";
 				repromptSpeech = "Or maybe you want to add or remove an ingredient?";			
 			}
 			
@@ -110,10 +113,12 @@ var handlers = {
     'SessionEndedRequest': function () {
         console.log('session ended!');
         this.emit(':saveState', true);
-        this.emit(':tell', "Session ended!");
+        this.emit(':tell', "session ended!");
     },
 	'FindRecipes': function (that) {
 		var url = "https://spoonacular-recipe-food-nutrition-v1.p.mashape.com/recipes/findByIngredients?fillIngredients=false&ingredients=" + this.attributes['ingredients'].join(",") +"&limitLicense=false&number=5&ranking=1";
+		
+		console.log("url -> " + url);
 		
 		unirest.get(url).header("X-Mashape-Key", "ZVrobra1Wgmshu4HXd0zXIDreW7wp1Fxv2MjsnbTtMiT0jmH9X")
 		.header("Accept", "application/json")
@@ -131,8 +136,10 @@ var handlers = {
 			} else {
 				that.attributes['lastResult'] = recipes;
 				
-				speechOutput = "Do you like " + recipes[0].title + "?";
+				speechOutput = "Do you like " + recipes[0].title.replace(/&/g, 'and') + "?";
 				repromptSpeech = "Or maybe you want to add or remove an ingredient?";
+				
+				console.log("speech output -> " + speechOutput);
 			}
 			
 			that.emit(':ask', speechOutput, repromptSpeech);
@@ -141,6 +148,8 @@ var handlers = {
 	},
 	'GetInstructions': function (that) {
 		var url = "https://spoonacular-recipe-food-nutrition-v1.p.mashape.com/recipes/" + that.attributes['lastResult'][that.attributes['currentIndex']].id + "/information?includeNutrition=false";
+		
+		console.log("url -> " + url);
 		
 		unirest.get(url).header("X-Mashape-Key", "ZVrobra1Wgmshu4HXd0zXIDreW7wp1Fxv2MjsnbTtMiT0jmH9X")
 		.header("Accept", "application/json")
