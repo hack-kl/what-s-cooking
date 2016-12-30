@@ -12,65 +12,79 @@ exports.handler = function(event, context, callback) {
     alexa.execute();
 };
 
+var _ingredients = [];
+var _currentIndex = 0;
+var _lastResult = [];
+
+
 var handlers = {
     //Use LaunchRequest, instead of NewSession if you want to use the one-shot model
     // Alexa, ask [my-skill-invocation-name] to (do something)...
-    'LaunchRequest': function () {
-    //'NewSession': function () {
-        if(Object.keys(this.attributes).length === 0) {
-            this.attributes['ingredients'] = ['chicken'];
+    //'LaunchRequest': function () {
+		//console.log(">>> LaunchRequest >>>");
+		
+    'NewSession': function () {
+		console.log(">>> NewSession >>>");
+        if(_ingredients.length === 0) {
+            _ingredients = ['chicken'];
         }
-		//this.attributes['ingredients'] = ['chicken'];			
         this.emit('FindRecipes', this);
     },
 	'NewIngredientIntent': function () {
-		this.attributes['currentIndex'] = 0;
+		console.log(">>> NewIngredientIntent >>>");
+		
+		_currentIndex = 0;
 		var ingredients = this.event.request.intent.slots.ingredients;
 		if (ingredients && ingredients.value) {
-			this.attributes['ingredients'] = ingredients.value.split(" ");
+			_ingredients = ingredients.value.split(" ");
 		} else {
-			//this.attributes['ingredients'] = [];			
-			this.attributes['ingredients'] = ['chicken'];			
+			_ingredients = ['chicken'];			
 		}
 
         this.emit('FindRecipes', this);
 	},
 	'AddIngredientIntent': function () {
-		this.attributes['currentIndex'] = 0;
+		console.log(">>> AddIngredientIntent >>>");
+		
+		_currentIndex = 0;
 		
 		var newIngredientsList = [];
 		var ingredientsToAdd = this.event.request.intent.slots.ingredients;
 		if (ingredientsToAdd.value) {
 			var ingredientsToAddArray = ingredientsToAdd.value.split(" ");
-            newIngredientsList = this.attributes['ingredients'].concat(ingredientsToAddArray);
+            newIngredientsList = _ingredients.concat(ingredientsToAddArray);
             newIngredientsList = newIngredientsList.filter(
                 function(value, index, self) { 
                     return self.indexOf(value) === index;
                 }
             );
-			this.attributes['ingredients'] = newIngredientsList;
+			_ingredients = newIngredientsList;
 		}
 
 		this.emit('FindRecipes', this);		
 	},
 	'RemoveIngredientIntent': function () {
-		this.attributes['currentIndex'] = 0;
+		console.log(">>> RemoveIngredientIntent >>>");
+		
+		_currentIndex = 0;
 		
 		var newIngredientsList = [];
 		var ingredientsToRemove = this.event.request.intent.slots.ingredients;
 		if (ingredientsToRemove.value) {
 			var ingredientsToRemoveArray = ingredientsToRemove.value.split(" ");
-            for (var i = 0; i < this.attributes['ingredients'].length; i++) {
-                if (ingredientsToRemoveArray.indexOf(this.attributes['ingredients'][i]) === -1) {
-                    newIngredientsList.push(this.attributes['ingredients'][i]);
+            for (var i = 0; i < _ingredients.length; i++) {
+                if (ingredientsToRemoveArray.indexOf(_ingredients[i]) === -1) {
+                    newIngredientsList.push(_ingredients[i]);
                 }
             }
-			this.attributes['ingredients'] = newIngredientsList;
+			_ingredients = newIngredientsList;
 		}
 
 		this.emit('FindRecipes', this);
 	},
     'AMAZON.HelpIntent': function () {
+		console.log(">>> HelpIntent >>>");		
+
 		var speechOutput = "Ask me what I can make with carrots and cucumbers.  Add some chicken and I will make a recipe suggestion.";
 		var repromptSpeech = "Can I help you with a recipe?";
 		this.emit(':ask', speechOutput, repromptSpeech);
@@ -84,26 +98,36 @@ var handlers = {
 	
 	// get instructions using rest call
     'AMAZON.YesIntent': function () {
+		console.log(">>> YesIntent >>>");
+		
 		this.emit('GetInstructions', this);
     },
 	
 	// get next recipe from last result
     'AMAZON.NoIntent': function () {
-		this.attributes['currentIndex']++;
+		console.log(">>> NoIntent >>>");
 		
-		if (!this.attributes['currentIndex'] || !this.attributes['lastResult'] || !this.attributes['lastResult'].length) {
+		_currentIndex++;
+		
+		console.log(">>> index >>> " + _currentIndex);
+		console.log(">>> result >>> " + _lastResult);
+		
+		if (!_currentIndex || !_lastResult || !_lastResult.length) {
 			this.emit('AMAZON.HelpIntent');
 		} else {		
 			var speechOutput = '';
 			var repromptSpeech = '';
 			
 
-			if (this.attributes['lastResult'].length <= this.attributes['currentIndex']) {
-				speechOutput = "No additional recipe containing " + this.attributes['ingredients'].join(" ") + "  Try removing an ingredient.";
-				repromptSpeech = "Try saying, remove " + this.attributes['ingredients'][0];			
+			if (_lastResult.length <= _currentIndex) {
+				speechOutput = "No additional recipe containing " + _ingredients.join(" ") + "  Try removing an ingredient.";
+				repromptSpeech = "Try saying, remove " + _ingredients[0];			
 			} else {
-				speechOutput = "Do you like " + this.attributes['lastResult'][this.attributes['currentIndex']].title.replace(/&/g, 'and') + "?";
+				speechOutput = "Do you like " + _lastResult[_currentIndex].title.replace(/&/g, 'and') + "?";
 				repromptSpeech = "Or maybe you want to add or remove an ingredient?";			
+				
+				console.log("speech output -> " + speechOutput);
+
 			}
 			
 			this.emit(':ask', speechOutput, repromptSpeech);
@@ -116,9 +140,9 @@ var handlers = {
         this.emit(':tell', "session ended!");
     },
 	'FindRecipes': function (that) {
-		var url = "https://spoonacular-recipe-food-nutrition-v1.p.mashape.com/recipes/findByIngredients?fillIngredients=false&ingredients=" + this.attributes['ingredients'].join(",") +"&limitLicense=false&number=5&ranking=1";
+		var url = "https://spoonacular-recipe-food-nutrition-v1.p.mashape.com/recipes/findByIngredients?fillIngredients=false&ingredients=" + _ingredients.join(",") +"&limitLicense=false&number=5&ranking=1";
 		
-		console.log("url -> " + url);
+		console.log(">>> FindRecipes >>> " + url);
 		
 		unirest.get(url).header("X-Mashape-Key", "ZVrobra1Wgmshu4HXd0zXIDreW7wp1Fxv2MjsnbTtMiT0jmH9X")
 		.header("Accept", "application/json")
@@ -131,10 +155,10 @@ var handlers = {
 			var repromptSpeech = '';
 			
 			if (recipes.length == 0) {	
-				speechOutput = "No recipe containing " + that.attributes['ingredients'].join(" ") + "  Try removing an ingredient.";
-				repromptSpeech = "Try saying, remove " + that.attributes['ingredients'][0];
+				speechOutput = "No recipe containing " + _ingredients.join(" ") + "  Try removing an ingredient.";
+				repromptSpeech = "Try saying, remove " + _ingredients[0];
 			} else {
-				that.attributes['lastResult'] = recipes;
+				_lastResult = recipes;
 				
 				speechOutput = "Do you like " + recipes[0].title.replace(/&/g, 'and') + "?";
 				repromptSpeech = "Or maybe you want to add or remove an ingredient?";
@@ -147,9 +171,9 @@ var handlers = {
 		
 	},
 	'GetInstructions': function (that) {
-		var url = "https://spoonacular-recipe-food-nutrition-v1.p.mashape.com/recipes/" + that.attributes['lastResult'][that.attributes['currentIndex']].id + "/information?includeNutrition=false";
+		var url = "https://spoonacular-recipe-food-nutrition-v1.p.mashape.com/recipes/" + _lastResult[_currentIndex].id + "/information?includeNutrition=false";
 		
-		console.log("url -> " + url);
+		console.log(">>> GetInstructions >>> " + url);
 		
 		unirest.get(url).header("X-Mashape-Key", "ZVrobra1Wgmshu4HXd0zXIDreW7wp1Fxv2MjsnbTtMiT0jmH9X")
 		.header("Accept", "application/json")
@@ -167,7 +191,12 @@ var handlers = {
 			that.emit(':tell', speechOutput);
 		});
 		
+	},
+	'Unhandled': function () {
+		var message = "Say yes to get recipe instructions, or no to get next recipe.";
+		this.emit(':ask', message, message);
 	}
+
 };
 
 
